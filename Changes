@@ -1,0 +1,6 @@
+Revision history for Perl extension Anansi::ObjectManager.
+
+0.01  Sat Apr  6 17:57:11 2013
+	- original version; created by h2xs 1.23 with options
+		-AX Anansi::ObjectManager
+
