@@ -47,7 +47,7 @@ used.
 =cut
 
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $NAMESPACE;
 
@@ -71,13 +71,13 @@ objects up to the moment of termination.
 
 sub current {
     my ($self, %parameters) = @_;
-    return if(!defined(%parameters->{USER}));
-    return if(ref(%parameters->{USER}) =~ /^(|ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
-    my $user = %parameters->{USER};
-    return if(!defined(%parameters->{USES}));
-    if(ref(%parameters->{USES}) =~ /^(|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
+    return if(!defined($parameters{USER}));
+    return if(ref($parameters{USER}) =~ /^(|ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
+    my $user = $parameters{USER};
+    return if(!defined($parameters{USES}));
+    if(ref($parameters{USES}) =~ /^(|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
         return;
-    } elsif(ref(%parameters->{USES}) =~ /^ARRAY$/i) {
+    } elsif(ref($parameters{USES}) =~ /^ARRAY$/i) {
         $self->register($user) if(!defined($user->{IDENTIFICATION}));
         my $userIndex = $self->identification($user->{IDENTIFICATION});
         if(!defined($userIndex)) {
@@ -97,7 +97,7 @@ sub current {
                 push(@users, $instance) if($found == scalar(@users));
             }
         }
-        foreach my $uses (@{%parameters->{USES}}) {
+        foreach my $uses (@{$parameters{USES}}) {
             next if(ref($uses) =~ /^(|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
             $self->register($uses) if(!defined($uses->{IDENTIFICATION}));
             my $usesIndex = $self->identification($uses->{IDENTIFICATION});
@@ -133,7 +133,7 @@ sub current {
                 push(@users, $instance) if($found == scalar(@users));
             }
         }
-        my $uses = %parameters->{USES};
+        my $uses = $parameters{USES};
         $self->register($uses) if(!defined($uses->{IDENTIFICATION}));
         my $usesIndex = $self->identification($uses->{IDENTIFICATION});
         if(!defined($usesIndex)) {
@@ -212,6 +212,8 @@ sub identification {
         return;
     } elsif(ref($instance) =~ /^$/) {
         return if($instance =~ /^\s*$/);
+        return if(!defined($self->{IDENTIFICATIONS}));
+        return if(ref($self->{IDENTIFICATIONS}) !~ /^ARRAY$/i);
         for(my $index = 0; $index < scalar(@{$self->{IDENTIFICATIONS}}); $index++) {
             return $index if($instance == @{$self->{IDENTIFICATIONS}}[$index]);
         }
@@ -282,14 +284,14 @@ by the perl interpreter garbage collection.
 
 sub obsolete {
     my ($self, %parameters) = @_;
-    return if(!defined(%parameters->{USER}));
-    return if(ref(%parameters->{USER}) =~ /^(|ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
-    my $user = %parameters->{USER};
+    return if(!defined($parameters{USER}));
+    return if(ref($parameters{USER}) =~ /^(|ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
+    my $user = $parameters{USER};
     return if(!defined($user->{IDENTIFICATION}));
     my $userIndex = $self->identification($user->{IDENTIFICATION});
     return if(!defined($userIndex));
     return if(!defined($self->{'INSTANCE_'.$userIndex}));
-    if(!defined(%parameters->{USES})) {
+    if(!defined($parameters{USES})) {
         for(my $identification = scalar(@{$self->{IDENTIFICATIONS}}) - 1; 0 < $identification; $identification--) {
             next if(!defined($self->{'INSTANCE_'.$identification}));
             if(defined($self->{'INSTANCE_'.$identification}->{'USER_'.$userIndex})) {
@@ -306,10 +308,10 @@ sub obsolete {
                 }
             }
         }
-    } elsif(ref(%parameters->{USES}) =~ /^(|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
+    } elsif(ref($parameters{USES}) =~ /^(|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
         return;
-    } elsif(ref(%parameters->{USES}) =~ /^ARRAY$/i) {
-        foreach my $uses (@{%parameters->{USES}}) {
+    } elsif(ref($parameters{USES}) =~ /^ARRAY$/i) {
+        foreach my $uses (@{$parameters{USES}}) {
             if(ref($uses) =~ /^(CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
                 next;
             } elsif(ref($uses) =~ /^$/) {
@@ -350,7 +352,7 @@ sub obsolete {
             }
         }
     } else {
-        my $uses = %parameters->{USES};
+        my $uses = $parameters{USES};
         return if(!defined($uses->{IDENTIFICATION}));
         my $usesIndex = $self->identification($uses->{IDENTIFICATION});
         return if(!defined($usesIndex));
