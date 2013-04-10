@@ -47,7 +47,7 @@ used.
 =cut
 
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 my $NAMESPACE;
 
@@ -524,7 +524,7 @@ END {
 
 =head1 AUTHOR
 
-Kevin Treleaven <kevin@treleaven.net>
+Kevin Treleaven <kevin AT treleaven DOT net>
 
 =cut
 
