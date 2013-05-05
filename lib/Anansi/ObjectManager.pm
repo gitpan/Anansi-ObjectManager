@@ -36,18 +36,21 @@ Anansi::ObjectManager - A module object encapsulation manager
   return $self;
  }
 
+ 1;
+
 
 =head1 DESCRIPTION
-
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
 This is a manager for encapsulating module objects within other module objects
 and ensures that the memory used by any module object will only be garbage
 collected by the perl run time environment when the module object is no longer
-used.
+used.  Many of the subroutines/methods declared by this module are for internal
+use only but are provided in this context for purposes of module extension.
 
 =cut
 
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $NAMESPACE;
 
@@ -60,6 +63,25 @@ my $OBJECTMANAGER = Anansi::ObjectManager->new();
 
 
 =head2 current
+
+ my $someObject = Some::Example->new();
+ $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => $someObject->{ANOTHER_OBJECT},
+ );
+
+ # OR
+
+ my $someObject = Some::Example->new();
+ $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+ $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+ );
 
 Ensures that a module object instance is tied to one or more module object
 instances to ensure that those object instances are terminated after the tying
@@ -153,6 +175,17 @@ sub current {
 
 =head2 finalise
 
+ package Some::Example;
+
+ use base(Anansi::ObjectManager);
+
+ sub old {
+     my ($self, %parameters) = @_;
+     $self->finalise();
+ }
+
+ 1;
+
 Ensures that all of the known object instances are allowed to terminate in
 reverse order of dependence.  Indirectly called by the termination of an
 instance of this module.
@@ -189,6 +222,22 @@ sub finalise {
 
 
 =head2 identification
+
+ my $someExample = Some::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ my $identification = $objectManager->identification($someExample);
+ if(defined($identification));
+
+ # OR
+
+ my $someExample = Some::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ my $identification, $index;
+ try {
+  $identification = $someExample->{IDENTIFICATION};
+ }
+ $ordinal = $objectManager->identification($identification) if(defined($identification));
+ if(defined($ordinal));
 
 Assigns an identifying number to a module object instance as required and either
 returns the identifying number or the unique ordinal number of the module object
@@ -231,6 +280,17 @@ sub identification {
 
 =head2 initialise
 
+ package Some::Example;
+
+ use base(Anansi::ObjectManager);
+
+ sub initialise {
+  my ($self, %parameters) = @_;
+  $self->SUPER::initialise(%parameters);
+ }
+
+ 1;
+
 Performs after creation actions on the first instance object of this module that
 is created.
 
@@ -247,6 +307,8 @@ sub initialise {
 
 
 =head2 new
+
+ my $objectManager = Anansi::ObjectManager->new();
 
 Instantiates an object instance of this module, ensuring that the object
 instance can be interpreted by this module.
@@ -273,6 +335,40 @@ sub new {
 
 
 =head2 obsolete
+
+ my $someObject = Some::Example->new();
+ $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => $someObject->{ANOTHER_OBJECT},
+ );
+ # ...
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->obsolete(
+  USER => $someObject,
+  USES => $someObject->{ANOTHER_OBJECT},
+ );
+ delete $someObject->{ANOTHER_OBJECT};
+
+ # OR
+
+ my $someObject = Some::Example->new();
+ $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+ $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+ );
+ # ...
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->obsolete(
+  USER => $someObject,
+  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+ );
+ delete $someObject->{ANOTHER_OBJECT};
+ delete $someObject->{YET_ANOTHER_OBJECT};
 
 Ensures that module object instances that have previously been tied to an object
 instance can terminate prior to the termination of the tying object instance.
@@ -375,6 +471,17 @@ sub obsolete {
 
 =head2 old
 
+ package Some::Example;
+
+ use base(Anansi::ObjectManager);
+
+ sub old {
+  my ($self, %parameters) = @_;
+  $self->SUPER::old(%parameters);
+ }
+
+ 1;
+
 Performs module object instance clean-up actions.
 
 =cut
@@ -387,6 +494,10 @@ sub old {
 
 
 =head2 register
+
+ my $someObject = Some::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->register($someObject);
 
 Ties as required an object instance to this module and increments an internal
 counter as to how many times the object instance has been tied.  This ensure
@@ -414,6 +525,12 @@ sub register {
 
 =head2 registrations
 
+ my $someObject = Some::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->register($someObject);
+ # ...
+ if(0 < $objectManager->registrations($someObject));
+
 Determines the number of times an object instance has been tied to this module.
 
 =cut
@@ -429,6 +546,17 @@ sub registrations {
 
 =head2 reinitialise
 
+ package Some::Example;
+
+ use base(Anansi::ObjectManager);
+
+ sub reinitialise {
+  my ($self, %parameters) = @_;
+  $self->SUPER::reinitialise(%parameters);
+ }
+
+ 1;
+
 Performs additional after creation actions on subsequent instance objects of
 this module that are created.
 
@@ -441,6 +569,13 @@ sub reinitialise {
 
 
 =head2 unregister
+
+ my $someObject = Some::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->register($someObject);
+ # ...
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->unregister($someObject);
 
 Reduce the number of times an object instance has been tied to this module and
 remove the tie that inhibits the perl garbage collection from removing the
@@ -470,6 +605,21 @@ sub unregister {
 
 =head2 user
 
+ my $someObject = Some::Example->new();
+ $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => $someObject->{ANOTHER_OBJECT},
+ );
+ # ...
+ my $userObjects = $objectManager->user($someObject);
+ if(defined($userObjects)) {
+  foreach my $userObject (@{$userObjects}) {
+   # ...
+  }
+ }
+
 Determine the object instances that are made use of by an object instance.
 
 =cut
@@ -493,6 +643,22 @@ sub user {
 
 
 =head2 uses
+
+ my $someObject = Some::Example->new();
+ my $anotherObject = Another::Example->new();
+ $someObject->{ANOTHER_OBJECT} = $anotherObject;
+ my $objectManager = Anansi::ObjectManager->new();
+ $objectManager->current(
+  USER => $someObject,
+  USES => $someObject->{ANOTHER_OBJECT},
+ );
+ # ...
+ my $usesObjects = $objectManager->uses($anotherObject);
+ if(defined($usesObjects)) {
+  foreach my $usesObject (@{$usesObjects}) {
+   # ...
+  }
+ }
 
 Determine the object instances that an object instance makes use of.
 
