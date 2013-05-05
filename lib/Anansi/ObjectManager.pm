@@ -50,7 +50,7 @@ use only but are provided in this context for purposes of module extension.
 =cut
 
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 my $NAMESPACE;
 
