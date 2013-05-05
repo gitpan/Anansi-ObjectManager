@@ -40,7 +40,7 @@ Anansi::ObjectManager - A module object encapsulation manager
 
 
 =head1 DESCRIPTION
-12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
 This is a manager for encapsulating module objects within other module objects
 and ensures that the memory used by any module object will only be garbage
 collected by the perl run time environment when the module object is no longer
@@ -177,7 +177,7 @@ sub current {
 
  package Some::Example;
 
- use base(Anansi::ObjectManager);
+ use base qw(Anansi::ObjectManager);
 
  sub old {
      my ($self, %parameters) = @_;
@@ -282,7 +282,7 @@ sub identification {
 
  package Some::Example;
 
- use base(Anansi::ObjectManager);
+ use base qw(Anansi::ObjectManager);
 
  sub initialise {
   my ($self, %parameters) = @_;
@@ -473,7 +473,7 @@ sub obsolete {
 
  package Some::Example;
 
- use base(Anansi::ObjectManager);
+ use base qw(Anansi::ObjectManager);
 
  sub old {
   my ($self, %parameters) = @_;
@@ -548,7 +548,7 @@ sub registrations {
 
  package Some::Example;
 
- use base(Anansi::ObjectManager);
+ use base qw(Anansi::ObjectManager);
 
  sub reinitialise {
   my ($self, %parameters) = @_;

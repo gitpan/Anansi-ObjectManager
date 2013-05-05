@@ -9,4 +9,6 @@ Revision history for Perl extension Anansi::ObjectManager.
 	- munged email address.
 0.04  Sun May  5 11:30:23 2013
 	- modified POD.
+0.05  Sun May  5 14:06:56 2013
+	- basic POD example corrections.
 
