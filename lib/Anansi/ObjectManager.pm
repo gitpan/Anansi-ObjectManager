@@ -7,37 +7,36 @@ Anansi::ObjectManager - A module object encapsulation manager
 
 =head1 SYNOPSIS
 
- package Anansi::Example;
+    package Anansi::Example;
 
- use Anansi::ObjectManager;
+    use Anansi::ObjectManager;
 
- sub DESTROY {
-  my ($self) = @_;
-  my $objectManager = Anansi::ObjectManager->new();
-  if(1 == $objectManager->registrations($self)) {
-   $objectManager->obsolete(
-    USER => $self,
-   );
-   $objectManager->unregister($self);
-  }
- }
+    sub DESTROY {
+        my ($self) = @_;
+        my $objectManager = Anansi::ObjectManager->new();
+        if(1 == $objectManager->registrations($self)) {
+            $objectManager->obsolete(
+                USER => $self,
+            );
+            $objectManager->unregister($self);
+        }
+    }
 
- sub new {
-  my ($class, %parameters) = @_;
-  return if(ref($class) =~ /^ (ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
-  $class = ref($class) if(ref($class) !~ /^$/);
-  my $self = {
-   NAMESPACE => $class,
-   PACKAGE => __PACKAGE__,
-  };
-  bless($self, $class);
-  my $objectManager = Anansi::ObjectManager->new();
-  $objectManager->register($self);
-  return $self;
- }
+    sub new {
+        my ($class, %parameters) = @_;
+        return if(ref($class) =~ /^ (ARRAY|CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i);
+        $class = ref($class) if(ref($class) !~ /^$/);
+        my $self = {
+            NAMESPACE => $class,
+            PACKAGE => __PACKAGE__,
+        };
+        bless($self, $class);
+        my $objectManager = Anansi::ObjectManager->new();
+        $objectManager->register($self);
+        return $self;
+    }
 
- 1;
-
+    1;
 
 =head1 DESCRIPTION
 
@@ -50,7 +49,7 @@ use only but are provided in this context for purposes of module extension.
 =cut
 
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my $NAMESPACE;
 
@@ -64,24 +63,49 @@ my $OBJECTMANAGER = Anansi::ObjectManager->new();
 
 =head2 current
 
- my $someObject = Some::Example->new();
- $someObject->{ANOTHER_OBJECT} = Another::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => $someObject->{ANOTHER_OBJECT},
- );
+    my $someObject = Some::Example->new();
+    $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => $someObject->{ANOTHER_OBJECT},
+    );
 
- # OR
+    my $someObject = Some::Example->new();
+    $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+    $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+    );
 
- my $someObject = Some::Example->new();
- $someObject->{ANOTHER_OBJECT} = Another::Example->new();
- $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
- );
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Required)>
+
+Named parameters.
+
+=over 4
+
+=item USER I<(Blessed Hash, Required)>
+
+The object that needs the I<USES> objects to only be garbage collected at some
+time after it has finished using them.  This object may be garbage collected at
+any time after the Perl interpreter has determined that it is no longer in use.
+
+=item USES I<(Blessed Hash B<or> Array, Required)>
+
+Either an object or an array of objects that the I<USER> object needs to only be
+garbage collected at some time after it has finished using them.
+
+=back
+
+=back
 
 Ensures that a module object instance is tied to one or more module object
 instances to ensure that those object instances are terminated after the tying
@@ -175,16 +199,28 @@ sub current {
 
 =head2 finalise
 
- package Some::Example;
+    package Some::Example;
 
- use base qw(Anansi::ObjectManager);
+    use base qw(Anansi::ObjectManager);
 
- sub old {
-     my ($self, %parameters) = @_;
-     $self->finalise();
- }
+    sub old {
+        my ($self, %parameters) = @_;
+        $self->finalise();
+    }
 
- 1;
+    1;
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Optional)>
+
+Named parameters.
+
+=back
 
 Ensures that all of the known object instances are allowed to terminate in
 reverse order of dependence.  Indirectly called by the termination of an
@@ -223,21 +259,32 @@ sub finalise {
 
 =head2 identification
 
- my $someExample = Some::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- my $identification = $objectManager->identification($someExample);
- if(defined($identification));
+    my $someExample = Some::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    my $identification = $objectManager->identification($someExample);
+    if(defined($identification));
 
- # OR
+    my $someExample = Some::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    my $identification, $index;
+    try {
+        $identification = $someExample->{IDENTIFICATION};
+    }
+    $ordinal = $objectManager->identification($identification) if(defined($identification));
+    if(defined($ordinal));
 
- my $someExample = Some::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- my $identification, $index;
- try {
-  $identification = $someExample->{IDENTIFICATION};
- }
- $ordinal = $objectManager->identification($identification) if(defined($identification));
- if(defined($ordinal));
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<(Blessed Hash B<or> String, Optional)>
+
+Either a previously registered object or an object's identifying registration
+number.
+
+=back
 
 Assigns an identifying number to a module object instance as required and either
 returns the identifying number or the unique ordinal number of the module object
@@ -280,16 +327,28 @@ sub identification {
 
 =head2 initialise
 
- package Some::Example;
+    package Some::Example;
 
- use base qw(Anansi::ObjectManager);
+    use base qw(Anansi::ObjectManager);
 
- sub initialise {
-  my ($self, %parameters) = @_;
-  $self->SUPER::initialise(%parameters);
- }
+    sub initialise {
+        my ($self, %parameters) = @_;
+        $self->SUPER::initialise(%parameters);
+    }
 
- 1;
+    1;
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Optional)>
+
+Named parameters.
+
+=back
 
 Performs after creation actions on the first instance object of this module that
 is created.
@@ -308,10 +367,24 @@ sub initialise {
 
 =head2 new
 
- my $objectManager = Anansi::ObjectManager->new();
+    my $objectManager = Anansi::ObjectManager->new();
+
+=over 4
+
+=item class I<(Blessed Hash B<or> String, Required)>
+
+Either an object of this namespace or this module's namespace.
+
+=item parameters I<(Hash, Optional)>
+
+Named parameters.
+
+=back
 
 Instantiates an object instance of this module, ensuring that the object
-instance can be interpreted by this module.
+instance can be interpreted by this module.  This object is a singleton so only
+one object will ever be created at any one time by a Perl script.  Subsequent
+uses of this subroutine will return the existing object.
 
 =cut
 
@@ -336,39 +409,64 @@ sub new {
 
 =head2 obsolete
 
- my $someObject = Some::Example->new();
- $someObject->{ANOTHER_OBJECT} = Another::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => $someObject->{ANOTHER_OBJECT},
- );
- # ...
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->obsolete(
-  USER => $someObject,
-  USES => $someObject->{ANOTHER_OBJECT},
- );
- delete $someObject->{ANOTHER_OBJECT};
+    my $someObject = Some::Example->new();
+    $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => $someObject->{ANOTHER_OBJECT},
+    );
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->obsolete(
+        USER => $someObject,
+        USES => $someObject->{ANOTHER_OBJECT},
+    );
+    delete $someObject->{ANOTHER_OBJECT};
 
- # OR
+    my $someObject = Some::Example->new();
+    $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+    $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+    );
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->obsolete(
+        USER => $someObject,
+        USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
+    );
+    delete $someObject->{ANOTHER_OBJECT};
+    delete $someObject->{YET_ANOTHER_OBJECT};
 
- my $someObject = Some::Example->new();
- $someObject->{ANOTHER_OBJECT} = Another::Example->new();
- $someObject->{YET_ANOTHER_OBJECT} = Yet::Another::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
- );
- # ...
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->obsolete(
-  USER => $someObject,
-  USES => [$someObject->{ANOTHER_OBJECT}, $someObject->{YET_ANOTHER_OBJECT}],
- );
- delete $someObject->{ANOTHER_OBJECT};
- delete $someObject->{YET_ANOTHER_OBJECT};
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Required)>
+
+Named parameters.
+
+=over 4
+
+=item USER I<(Blessed Hash, Required)>
+
+The object that has previously needed the I<USES> objects to only be garbage
+collected at some time after it has finished using them and no longer does.
+This object may be garbage collected at any time after the Perl interpreter has
+determined that it is no longer in use.
+
+=item USES I<(Blessed Hash B<or> Array, Required)>
+
+Either an object or an array of objects that the I<USER> object has previously
+needed to only be garbage collected at some time after it has finished using
+them and now no longer does.
+
+=back
+
+=back
 
 Ensures that module object instances that have previously been tied to an object
 instance can terminate prior to the termination of the tying object instance.
@@ -471,16 +569,28 @@ sub obsolete {
 
 =head2 old
 
- package Some::Example;
+    package Some::Example;
 
- use base qw(Anansi::ObjectManager);
+    use base qw(Anansi::ObjectManager);
 
- sub old {
-  my ($self, %parameters) = @_;
-  $self->SUPER::old(%parameters);
- }
+    sub old {
+        my ($self, %parameters) = @_;
+        $self->SUPER::old(%parameters);
+    }
 
- 1;
+    1;
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Optional)>
+
+Named parameters.
+
+=back
 
 Performs module object instance clean-up actions.
 
@@ -495,9 +605,21 @@ sub old {
 
 =head2 register
 
- my $someObject = Some::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->register($someObject);
+    my $someObject = Some::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->register($someObject);
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<(Blessed Hash, Required)>
+
+The object to register with this module.
+
+=back
 
 Ties as required an object instance to this module and increments an internal
 counter as to how many times the object instance has been tied.  This ensure
@@ -525,13 +647,25 @@ sub register {
 
 =head2 registrations
 
- my $someObject = Some::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->register($someObject);
- # ...
- if(0 < $objectManager->registrations($someObject));
+    my $someObject = Some::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->register($someObject);
+    if(0 < $objectManager->registrations($someObject));
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<Blessed Hash, Required)>
+
+The object that has previously been registered with this module.
+
+=back
 
 Determines the number of times an object instance has been tied to this module.
+If no previous registrations exist then B<0> I<(zero)> will be returned.
 
 =cut
 
@@ -546,16 +680,28 @@ sub registrations {
 
 =head2 reinitialise
 
- package Some::Example;
+    package Some::Example;
 
- use base qw(Anansi::ObjectManager);
+    use base qw(Anansi::ObjectManager);
 
- sub reinitialise {
-  my ($self, %parameters) = @_;
-  $self->SUPER::reinitialise(%parameters);
- }
+    sub reinitialise {
+        my ($self, %parameters) = @_;
+        $self->SUPER::reinitialise(%parameters);
+    }
 
- 1;
+    1;
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item parameters I<(Hash, Optional)>
+
+Named parameters.
+
+=back
 
 Performs additional after creation actions on subsequent instance objects of
 this module that are created.
@@ -570,12 +716,23 @@ sub reinitialise {
 
 =head2 unregister
 
- my $someObject = Some::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->register($someObject);
- # ...
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->unregister($someObject);
+    my $someObject = Some::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->register($someObject);
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->unregister($someObject);
+
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<(Blessed Hash, Required)>
+
+The object that has previously been registered with this module.
+
+=back
 
 Reduce the number of times an object instance has been tied to this module and
 remove the tie that inhibits the perl garbage collection from removing the
@@ -605,22 +762,36 @@ sub unregister {
 
 =head2 user
 
- my $someObject = Some::Example->new();
- $someObject->{ANOTHER_OBJECT} = Another::Example->new();
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => $someObject->{ANOTHER_OBJECT},
- );
- # ...
- my $userObjects = $objectManager->user($someObject);
- if(defined($userObjects)) {
-  foreach my $userObject (@{$userObjects}) {
-   # ...
-  }
- }
+    my $someObject = Some::Example->new();
+    $someObject->{ANOTHER_OBJECT} = Another::Example->new();
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => $someObject->{ANOTHER_OBJECT},
+    );
+    my $userObjects = $objectManager->user($someObject);
+    if(defined($userObjects)) {
+        foreach my $userObject (@{$userObjects}) {
+        }
+    }
 
-Determine the object instances that are made use of by an object instance.
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<(Blessed Hash, Required)>
+
+Either an object that has not previously been registered with this module or one
+that has been previously registered.
+
+=back
+
+Determine the object instances that are made use of by an object instance.  If
+the object instance has not previously been registered then it will be.  If
+object instances are found, an array of their identifying registration numbers
+will be returned otherwise an B<undef> will be returned.
 
 =cut
 
@@ -644,23 +815,37 @@ sub user {
 
 =head2 uses
 
- my $someObject = Some::Example->new();
- my $anotherObject = Another::Example->new();
- $someObject->{ANOTHER_OBJECT} = $anotherObject;
- my $objectManager = Anansi::ObjectManager->new();
- $objectManager->current(
-  USER => $someObject,
-  USES => $someObject->{ANOTHER_OBJECT},
- );
- # ...
- my $usesObjects = $objectManager->uses($anotherObject);
- if(defined($usesObjects)) {
-  foreach my $usesObject (@{$usesObjects}) {
-   # ...
-  }
- }
+    my $someObject = Some::Example->new();
+    my $anotherObject = Another::Example->new();
+    $someObject->{ANOTHER_OBJECT} = $anotherObject;
+    my $objectManager = Anansi::ObjectManager->new();
+    $objectManager->current(
+        USER => $someObject,
+        USES => $someObject->{ANOTHER_OBJECT},
+    );
+    my $usesObjects = $objectManager->uses($anotherObject);
+    if(defined($usesObjects)) {
+        foreach my $usesObject (@{$usesObjects}) {
+        }
+    }
 
-Determine the object instances that an object instance makes use of.
+=over 4
+
+=item self I<(Blessed Hash, Required)>
+
+An object of this namespace.
+
+=item instance I<(Blessed Hash, Required)>
+
+Either an object that has not previously been registered with this module or one
+that has been previously registered.
+
+=back
+
+Determine the object instances that make use of an object instance.  If the
+object instance has not previously been registered then it will be.  If object
+instances are found, an array of their identifying registration numbers will be
+returned otherwise an B<undef> will be returned.
 
 =cut
 
@@ -683,6 +868,24 @@ sub uses {
 }
 
 
+=head1 NOTES
+
+This module is designed to make it simple, easy and quite fast to code your
+design in perl.  If for any reason you feel that it doesn't achieve these goals
+then please let me know.  I am here to help.  All constructive criticisms are
+also welcomed.
+
+As this module is not intended to be directly implemented by an end user
+subroutine, as a measure to improve process speed, relatively few validation and
+verification tests are performed.  As a result, if you have any problems
+implementing this module from within your own module, please contact me.  If
+this lack of testing becomes a problem in the future, I will modify this module
+to implement the necessary tests.  Thank you for your continued support and
+understanding.
+
+=cut
+
+
 END {
     $OBJECTMANAGER->old() if(defined($OBJECTMANAGER));
 }
@@ -690,7 +893,7 @@ END {
 
 =head1 AUTHOR
 
-Kevin Treleaven <kevin AT treleaven DOT net>
+Kevin Treleaven <kevin I<AT> treleaven I<DOT> net>
 
 =cut
 
