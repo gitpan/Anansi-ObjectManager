@@ -38,6 +38,14 @@ Anansi::ObjectManager - A module object encapsulation manager
 
     1;
 
+    package main;
+
+    use Anansi::Example;
+
+    my $object = Anansi::Example->new();
+
+    1;
+
 =head1 DESCRIPTION
 
 This is a manager for encapsulating module objects within other module objects
@@ -49,7 +57,7 @@ use only but are provided in this context for purposes of module extension.
 =cut
 
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 my $NAMESPACE;
 
@@ -282,7 +290,7 @@ An object of this namespace.
 =item instance I<(Blessed Hash B<or> String, Optional)>
 
 Either a previously registered object or an object's identifying registration
-number.
+number or an object's unique ordinal number as stored internally by this module.
 
 =back
 
@@ -305,7 +313,6 @@ sub identification {
         } while(defined($self->identification($identification)));
         return $identification;
     } elsif(ref($instance) =~ /^(CODE|FORMAT|GLOB|HASH|IO|LVALUE|REF|Regexp|SCALAR|VSTRING)$/i) {
-        return;
     } elsif(ref($instance) =~ /^$/) {
         return if($instance =~ /^\s*$/);
         return if(!defined($self->{IDENTIFICATIONS}));
@@ -313,15 +320,16 @@ sub identification {
         for(my $index = 0; $index < scalar(@{$self->{IDENTIFICATIONS}}); $index++) {
             return $index if($instance == @{$self->{IDENTIFICATIONS}}[$index]);
         }
-        return;
+        return if($instance !~ /^\d+$/);
+        return ${$self->{IDENTIFICATIONS}}[$instance] if(0 + $instance < scalar(@{$self->{IDENTIFICATIONS}}));
     } else {
         return if(!defined($instance->{IDENTIFICATION}));
         return if($instance->{IDENTIFICATION} =~ /^\s*$/);
         for(my $index = 0; $index < scalar(@{$self->{IDENTIFICATIONS}}); $index++) {
             return $index if($instance->{IDENTIFICATION} == @{$self->{IDENTIFICATIONS}}[$index]);
         }
-        return;
     }
+    return;
 }
 
 
@@ -658,7 +666,7 @@ sub register {
 
 An object of this namespace.
 
-=item instance I<Blessed Hash, Required)>
+=item instance I<(Blessed Hash, Required)>
 
 The object that has previously been registered with this module.
 
@@ -788,10 +796,11 @@ that has been previously registered.
 
 =back
 
-Determine the object instances that are made use of by an object instance.  If
-the object instance has not previously been registered then it will be.  If
-object instances are found, an array of their identifying registration numbers
-will be returned otherwise an B<undef> will be returned.
+Determine the object instances that are made use of by the supplied object
+I<instance>.  If the object instance has not previously been registered then it
+will be.  If object instances are found, an array of their unique ordinal
+numbers as stored internally by this module will be returned otherwise an
+B<undef> will be returned.
 
 =cut
 
@@ -806,10 +815,11 @@ sub user {
     my @identifications;
     for(my $identification = 0; $identification < scalar(@{$self->{IDENTIFICATIONS}}); $identification++) {
         next if($instanceIndex == $identification);
-        push(@identifications, $identification) if(defined($self->{'INSTANCE_'.$instanceIndex}->{'USER_'.$identification}));
+        next if(!defined($self->{'INSTANCE_'.$identification}));
+        push(@identifications, $identification) if(defined($self->{'INSTANCE_'.$identification}->{'USER_'.$instanceIndex}));
     }
     return if(0 == scalar(@identifications));
-    return (@identifications);
+    return [(@identifications)];
 }
 
 
@@ -842,10 +852,11 @@ that has been previously registered.
 
 =back
 
-Determine the object instances that make use of an object instance.  If the
-object instance has not previously been registered then it will be.  If object
-instances are found, an array of their identifying registration numbers will be
-returned otherwise an B<undef> will be returned.
+Determine the object instances that make use of the supplied object I<instance>.
+If the object instance has not previously been registered then it will be.  If
+object instances are found, an array of their unique ordinal numbers as stored
+internally by this module will be returned otherwise an B<undef> will be
+returned.
 
 =cut
 
@@ -860,11 +871,10 @@ sub uses {
     my @identifications;
     for(my $identification = 0; $identification < scalar(@{$self->{IDENTIFICATIONS}}); $identification++) {
         next if($instanceIndex == $identification);
-        next if(!defined($self->{'INSTANCE_'.$identification}));
-        push(@identifications, $identification) if(defined($self->{'INSTANCE_'.$identification}->{'USER_'.$instanceIndex}));
+        push(@identifications, $identification) if(defined($self->{'INSTANCE_'.$instanceIndex}->{'USER_'.$identification}));
     }
     return if(0 == scalar(@identifications));
-    return (@identifications);
+    return [(@identifications)];
 }
 
 
